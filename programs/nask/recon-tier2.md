@@ -46,3 +46,28 @@ Dalej potrzeba **uwierzytelnienia**, a najlepsze bugi (IDOR/BAC) wymagają **dw�
 recaptcha/weryfikacja mailowa może blokować zakładanie konta z sesji chmurowej.
 
 Kont nie zakładam samodzielnie bez decyzji – zgodnie z zasadami muszą to być konta własne/testowe.
+
+## Weryfikacja: HIVE – rejestracja ZAMKNIĘTA
+- Ekran `/login`: tylko e-mail + hasło + „Zapomniałeś hasła?", brak linku rejestracji.
+- `/register` → przekierowuje na `/login`. Rejestracja na zaproszenie. **Authenticated testing niedostępny legalnie → trop zamknięty.**
+
+## Wyniki testów bez logowania (pozostałe cele) – wszystkie NEGATYWNE
+
+### pllum.org.pl (Nuxt na Azure Front Door)
+- IPX image proxy aktywny (`/_ipx/_/thumbnail.jpg` → 200), ale:
+  - zdalny URL → **403** (domeny nie dozwolone) → brak SSRF;
+  - traversal `....//` normalizowany do literału (IPX_FILE_NOT_FOUND) → brak odczytu plików;
+  - warianty `../`, `%5c` blokowane przez Azure Front Door (`x-azure-ref`).
+- `/api/_content/query` → zwraca wyłącznie publiczną treść (`_draft:false`), brak wycieku.
+- Właściwy czat/LLM na `pllum.clarin-pl.eu` – **poza zakresem**.
+
+### science.nask.pl / 116sos.pl (Next.js)
+- `/_next/image`: optymalizuje tylko obrazy lokalne; absolutny/zewnętrzny `url` → **400** → brak SSRF.
+- Porządny CSP, serwisy głównie treściowe.
+
+### bezpiecznewybory.pl – Akamai WAF (403 dla automatów; nie obchodzimy). secure.edu.pl – brak odpowiedzi.
+
+## Wniosek uczciwy
+Pasywna/nieuwierzytelniona powierzchnia NASK Tier 2 jest dobrze skonfigurowana – **nie znaleziono błędu nadającego się do zgłoszenia.**
+Realna, wysoko płatna ścieżka (IDOR/BAC w HIVE) wymaga legalnego konta, którego nie mamy.
+Dalszy postęp wymaga albo (a) prawowitego dostępu do HIVE, albo (b) interaktywnego testowania w przeglądarce (DOM/logika), albo (c) zmiany celu.
